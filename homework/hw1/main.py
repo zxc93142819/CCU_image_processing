@@ -52,43 +52,67 @@ def power_law(img , filename) :
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-def global_and_local_histogram(img , filename) :
+def histogram(img , filename) :
     hist_x = [i for i in range(256) ]
     h , w = img.shape
 
-    # 計算原本之histogram
-    origin_hist_y = [0] * 256
-    for i in range(h) :
-        for j in range(w) :
-            origin_hist_y[img[i][j]] += 1
-    
-    # 計算PDF and CDF
-    pdf = [y / (h * w) for y in origin_hist_y]
-    cdf = []
-    cumulative_sum = 0
-    for pdf_v in pdf:
-        cumulative_sum += pdf_v
-        cdf.append(cumulative_sum)
+    # global and local histogram equalization
+    grid_size =[[1 , 1] , [2 , 2] , [4 , 4] , [8 , 8]]
+    output_img = [img]
+    for k in range(4) :
+        equalized_image = np.zeros_like(img)
+        grid_h = h // grid_size[k][0]
+        grid_w = w // grid_size[k][1]
+        for i in range(grid_size[k][0]) :
+            for j in range(grid_size[k][1]) :
+                # 計算當前區域的邊界
+                start_h = i * grid_h
+                end_h = (i + 1) * grid_h if i != grid_size[k][0] - 1 else h
+                start_w = j * grid_w
+                end_w = (j + 1) * grid_w if j != grid_size[k][1] - 1 else w
 
-    # 將 CDF 映射到 [0, 255]，並四捨五入作為新的灰度值
-    cdf_scaled = [int(cdf_v * 255) for cdf_v in cdf]
-    
-    # tranform it
-    transform_img = np.zeros((h , w) , dtype='uint8')
-    for i in range(h) :
-        for j in range(w) :
-            transform_img[i][j] = cdf_scaled[img[i][j]]
-    # print(cdf_scaled)
+                # 擷取當前區域的子圖像
+                sub_image = img[start_h:end_h, start_w:end_w]
+                
+                # 計算sub_image之histogram
+                origin_hist_y = [0] * 256
+                for ii in range(grid_h) :
+                    for jj in range(grid_w) :
+                        origin_hist_y[sub_image[ii][jj]] += 1
+                
+                # 計算PDF and CDF
+                pdf = [y / (grid_h * grid_w) for y in origin_hist_y]
+                cdf = []
+                cumulative_sum = 0
+                for pdf_v in pdf:
+                    cumulative_sum += pdf_v
+                    cdf.append(cumulative_sum)
 
-    # 應用 CDF 到原始直方圖
-    transform_hist_y = [0] * 256
-    for i, cdf_v in enumerate(cdf_scaled):
-        transform_hist_y[cdf_v] += origin_hist_y[i]  # 映射原始值到新的灰度值
+                # 將 CDF 映射到 [0, 255]，並四捨五入作為新的灰度值
+                cdf_scaled = [int(cdf_v * 255) for cdf_v in cdf]
+                
+                # tranform it
+                equalized_sub_image = np.zeros((grid_h , grid_w) , dtype='uint8')
+                for ii in range(grid_h) :
+                    for jj in range(grid_w) :
+                        equalized_sub_image[ii][jj] = cdf_scaled[sub_image[ii][jj]]
+                
+                # 將均衡化後的區域放回結果圖像中
+                equalized_image[start_h:end_h, start_w:end_w] = equalized_sub_image
+        output_img.append(equalized_image)
 
-
+    # calculate histogram
+    output_histogram = []
+    for output in output_img :
+        h , w = output.shape
+        hist_y = [0] * 256
+        for i in range(h) :
+            for j in range(w) :
+                hist_y[output[i][j]] += 1
+        output_histogram.append(hist_y)
 
     # output -------------------------------------------------
-    histogram_combine = cv2.hconcat([img , transform_img])
+    histogram_combine = cv2.hconcat(output_img)
 
     # 造一個空白區域來寫caption
     h , w = histogram_combine.shape
@@ -100,8 +124,11 @@ def global_and_local_histogram(img , filename) :
     color = (255, 255, 255)
     thickness = 1
 
-    cv2.putText(blank_space, "origin", (int(w * 0.23), 30), font, font_scale, color, thickness)
-    cv2.putText(blank_space, "transformed", (int(w * 0.70), 30), font, font_scale, color, thickness)
+    cv2.putText(blank_space, "origin", (int(w * 0.08), 30), font, font_scale, color, thickness)
+    cv2.putText(blank_space, "after global transform", (int(w * 0.22), 30), font, font_scale, color, thickness)
+    cv2.putText(blank_space, "after local 2*2 transform", (int(w * 0.41), 30), font, font_scale, color, thickness)
+    cv2.putText(blank_space, "after local 4*4 transform", (int(w * 0.62), 30), font, font_scale, color, thickness)
+    cv2.putText(blank_space, "after local 8*8 transform", (int(w * 0.81), 30), font, font_scale, color, thickness)
 
     # 使用 vconcat 垂直拼在一起
     final_image = cv2.vconcat([histogram_combine, blank_space])
@@ -110,17 +137,38 @@ def global_and_local_histogram(img , filename) :
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-    plt.bar(hist_x, origin_hist_y, color='b')
+    plt.bar(hist_x, output_histogram[0], color='b')
     plt.title(f"histogram of {filename} before transform")
     plt.xlabel("Gray level")
-    plt.ylabel("PDF")
+    plt.ylabel("frequency")
     plt.xlim(0,255)
     plt.show()
 
-    plt.bar(hist_x, transform_hist_y, color='b')
-    plt.title(f"histogram of {filename} after transform")
+    plt.bar(hist_x, output_histogram[1], color='b')
+    plt.title(f"histogram of {filename} after global transform")
     plt.xlabel("Gray level")
-    plt.ylabel("PDF")
+    plt.ylabel("frequency")
+    plt.xlim(0,255)
+    plt.show()
+
+    plt.bar(hist_x, output_histogram[2], color='b')
+    plt.title(f"histogram of {filename} after local 2*2 transform")
+    plt.xlabel("Gray level")
+    plt.ylabel("frequency")
+    plt.xlim(0,255)
+    plt.show()
+
+    plt.bar(hist_x, output_histogram[3], color='b')
+    plt.title(f"histogram of {filename} after local 4*4 transform")
+    plt.xlabel("Gray level")
+    plt.ylabel("frequency")
+    plt.xlim(0,255)
+    plt.show()
+
+    plt.bar(hist_x, output_histogram[4], color='b')
+    plt.title(f"histogram of {filename} after local 8*8 transform")
+    plt.xlabel("Gray level")
+    plt.ylabel("frequency")
     plt.xlim(0,255)
     plt.show()
 
@@ -177,13 +225,15 @@ def image_sharpening(img , filename) :
     cv2.destroyAllWindows()
 
 # read image
-for filepath in glob.glob("./HW1_test_image/*.bmp") :
+dir = "./image/*.bmp"
+# dir = "./HW1_test_image/*.bmp"
+for filepath in glob.glob(dir) :
     img_gray = cv2.imread(filepath , cv2.IMREAD_GRAYSCALE)
     basename = os.path.basename(filepath)
     filename = os.path.splitext(basename)[0]
 
     power_law(img_gray , filename)
-    global_and_local_histogram(img_gray , filename)
+    histogram(img_gray , filename)
     image_sharpening(img_gray , filename)
 
     # bmp_image.close()
