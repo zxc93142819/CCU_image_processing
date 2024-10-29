@@ -111,6 +111,10 @@ def histogram(img , filename) :
                 hist_y[output[i][j]] += 1
         output_histogram.append(hist_y)
 
+    output_histogram_pdf = []
+    for histogram in output_histogram :
+        output_histogram_pdf.append([y / (h*w) for y in histogram])
+
     # output -------------------------------------------------
     histogram_combine = cv2.hconcat(output_img)
 
@@ -137,40 +141,81 @@ def histogram(img , filename) :
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-    plt.bar(hist_x, output_histogram[0], color='b')
-    plt.title(f"histogram of {filename} before transform")
-    plt.xlabel("Gray level")
-    plt.ylabel("frequency")
-    plt.xlim(0,255)
+    # 創建 2x2 子圖佈局
+    fig, axs = plt.subplots(2, 3, figsize=(15, 12))
+
+    # 設定-1~256是為了避免邊緣蓋過直方圖的線
+    axs[0, 0].bar(hist_x, output_histogram_pdf[0], color='skyblue')
+    axs[0, 0].set_title(f"histogram of {filename} before transform")
+    axs[0, 0].set_xlim(-1,256)
+    axs[0, 0].set_xlabel("Gray level")
+    axs[0, 0].set_ylabel("PDF")
+
+    axs[0, 1].bar(hist_x, output_histogram_pdf[1], color='Goldenrod')
+    axs[0, 1].set_title(f"histogram of {filename} after global transform")
+    axs[0, 1].set_xlim(-1,256)
+    axs[0, 1].set_xlabel("Gray level")
+    axs[0, 1].set_ylabel("PDF")
+
+    axs[0, 2].axis("off")
+
+    axs[1, 0].bar(hist_x, output_histogram_pdf[2], color='tomato')
+    axs[1, 0].set_title(f"histogram of {filename} after local 2*2 transform")
+    axs[1, 0].set_xlim(-1,256)
+    axs[1, 0].set_xlabel("Gray level")
+    axs[1, 0].set_ylabel("PDF")
+
+    axs[1, 1].bar(hist_x, output_histogram_pdf[3], color='lightgreen')
+    axs[1, 1].set_title(f"histogram of {filename} after local 4*4 transform")
+    axs[1, 1].set_xlim(-1,256)
+    axs[1, 1].set_xlabel("Gray level")
+    axs[1, 1].set_ylabel("PDF")
+
+    # 第四個區域
+    axs[1, 2].bar(hist_x, output_histogram_pdf[4], color='purple')
+    axs[1, 2].set_title(f"histogram of {filename} after local 8*8 transform")
+    axs[1, 2].set_xlim(-1,256)
+    axs[1, 2].set_xlabel("Gray level")
+    axs[1, 2].set_ylabel("PDF")
+
+    # 調整子圖間距
+    plt.tight_layout()
     plt.show()
 
-    plt.bar(hist_x, output_histogram[1], color='b')
-    plt.title(f"histogram of {filename} after global transform")
-    plt.xlabel("Gray level")
-    plt.ylabel("frequency")
-    plt.xlim(0,255)
-    plt.show()
+    # plt.bar(hist_x, output_histogram_pdf[0], color='b')
+    # plt.title(f"histogram of {filename} before transform")
+    # plt.xlabel("Gray level")
+    # plt.ylabel("PDF")
+    # plt.xlim(0,255)
+    # plt.show()
 
-    plt.bar(hist_x, output_histogram[2], color='b')
-    plt.title(f"histogram of {filename} after local 2*2 transform")
-    plt.xlabel("Gray level")
-    plt.ylabel("frequency")
-    plt.xlim(0,255)
-    plt.show()
+    # plt.bar(hist_x, output_histogram_pdf[1], color='b')
+    # plt.title(f"histogram of {filename} after global transform")
+    # plt.xlabel("Gray level")
+    # plt.ylabel("PDF")
+    # plt.xlim(0,255)
+    # plt.show()
 
-    plt.bar(hist_x, output_histogram[3], color='b')
-    plt.title(f"histogram of {filename} after local 4*4 transform")
-    plt.xlabel("Gray level")
-    plt.ylabel("frequency")
-    plt.xlim(0,255)
-    plt.show()
+    # plt.bar(hist_x, output_histogram_pdf[2], color='b')
+    # plt.title(f"histogram of {filename} after local 2*2 transform")
+    # plt.xlabel("Gray level")
+    # plt.ylabel("PDF")
+    # plt.xlim(0,255)
+    # plt.show()
 
-    plt.bar(hist_x, output_histogram[4], color='b')
-    plt.title(f"histogram of {filename} after local 8*8 transform")
-    plt.xlabel("Gray level")
-    plt.ylabel("frequency")
-    plt.xlim(0,255)
-    plt.show()
+    # plt.bar(hist_x, output_histogram_pdf[3], color='b')
+    # plt.title(f"histogram of {filename} after local 4*4 transform")
+    # plt.xlabel("Gray level")
+    # plt.ylabel("PDF")
+    # plt.xlim(0,255)
+    # plt.show()
+
+    # plt.bar(hist_x, output_histogram_pdf[4], color='b')
+    # plt.title(f"histogram of {filename} after local 8*8 transform")
+    # plt.xlabel("Gray level")
+    # plt.ylabel("PDF")
+    # plt.xlim(0,255)
+    # plt.show()
 
 def image_sharpening(img , filename) :
     mask1 = [0 , -1 , 0 , -1 , 5 , -1 , 0 , -1 , 0]
@@ -225,15 +270,13 @@ def image_sharpening(img , filename) :
     cv2.destroyAllWindows()
 
 # read image
-dir = "./image/*.bmp"
-# dir = "./HW1_test_image/*.bmp"
+# dir = "./image/*.bmp"
+dir = "./HW1_test_image/*.bmp"
 for filepath in glob.glob(dir) :
-    img_gray = cv2.imread(filepath , cv2.IMREAD_GRAYSCALE)
+    img = cv2.imread(filepath , cv2.IMREAD_GRAYSCALE)
     basename = os.path.basename(filepath)
     filename = os.path.splitext(basename)[0]
 
-    power_law(img_gray , filename)
-    histogram(img_gray , filename)
-    image_sharpening(img_gray , filename)
-
-    # bmp_image.close()
+    power_law(img , filename)
+    histogram(img , filename)
+    image_sharpening(img , filename)
