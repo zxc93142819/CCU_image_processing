@@ -108,7 +108,7 @@ moon_hbp = np.clip(moon_hbp, 0, 1)
 skeleton_hbp = (A-1) * skeleton_gray + skeleton_mask
 skeleton_hbp = np.clip(skeleton_hbp, 0, 1)
 
-cv2.imshow("幹" , skeleton_laplacian)
+cv2.imshow("yes" , moon_laplacian)
 cv2.waitKey()
 
 plt.subplot(121), plt.imshow(moon, "gray"), plt.title('origin')
