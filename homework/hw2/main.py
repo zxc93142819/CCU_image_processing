@@ -7,6 +7,20 @@ import matplotlib
 
 matplotlib.rcParams['figure.autolayout'] = True  # 自動調整佈局防止標題和圖像重疊
 
+def output_image(row , col , h , w , output , titles) :
+    # 創建 row x col 子圖佈局
+    fig, axs = plt.subplots(row , col , figsize = (h ,  w))
+    if(row >= 2) :
+        axs = axs.flatten()
+    for ax, img, title in zip(axs , output , titles):
+        ax.imshow(img , cmap = 'gray')
+        ax.set_title(title , fontsize = 12)
+        ax.axis('off')  # 隱藏坐標軸
+
+    # 調整子圖間距
+    plt.tight_layout()
+    plt.show()
+
 def Laplacian(f , filename) :
     # 傅立葉轉換
     F = np.fft.fftshift(np.fft.fft2(f))
@@ -34,16 +48,7 @@ def Laplacian(f , filename) :
     output = [f , g]
     titles = ["before Laplacian" , "after Laplacian"]
 
-    # 創建 1x2 子圖佈局
-    fig, axs = plt.subplots(1 , 2, figsize = (8, 6))
-    for ax, img, title in zip(axs , output , titles):
-        ax.imshow(img , cmap = 'gray')
-        ax.set_title(title , fontsize = 12)
-        ax.axis('off')  # 隱藏坐標軸
-
-    # 調整子圖間距
-    plt.tight_layout()
-    plt.show()
+    output_image(row = 1 , col = 2 , h = 8 , w = 6 , output = output , titles = titles)
 
     return
 
@@ -73,16 +78,7 @@ def unsharp(f , filename) :
     output = [f , ghp]
     titles = ["before unsharp" , "after unsharp"]
 
-    # 創建 1x2 子圖佈局
-    fig, axs = plt.subplots(1 , 2, figsize = (8, 6))
-    for ax, img, title in zip(axs , output , titles):
-        ax.imshow(img , cmap = 'gray')
-        ax.set_title(title , fontsize = 12)
-        ax.axis('off')  # 隱藏坐標軸
-
-    # 調整子圖間距
-    plt.tight_layout()
-    plt.show()
+    output_image(row = 1 , col = 2 , h = 8 , w = 6 , output = output , titles = titles)
 
     return 
 
@@ -98,23 +94,46 @@ def high_boost(f , filename) :
 
     titles = ["before high_boost" , f"A={A[0]}" , f"A={A[1]}" , f"A={A[2]}"]
 
-    # 創建 2x2 子圖佈局
-    fig, axs = plt.subplots(2 , 2, figsize = (15, 12))
-    # 拉平讓它成為一維
-    axs = axs.flatten()
-    for ax, img, title in zip(axs , output , titles):
-        ax.imshow(img , cmap = 'gray')
-        ax.set_title(title , fontsize = 12)
-        ax.axis('off')  # 隱藏坐標軸
-
-    # 調整子圖間距
-    plt.tight_layout()
-    plt.show()
+    output_image(row = 2 , col = 2 , h = 15 , w = 12 , output = output , titles = titles)
 
     return
 
 def homomorphic(f , filename) :
-    F = np.fft.fftshift(np.fft.fft2(f))
+    # 取ln
+    z = np.log1p(np.array(f) , dtype = "float")
+    
+    # 傅立葉轉換
+    Z = np.fft.fftshift(np.fft.fft2(z))
+
+    # gaussian filter
+    M , N = f.shape
+    D0 = 80
+    c = 2
+    rL = 0.5
+    rH = 2
+    H = np.zeros((M , N) , dtype = np.float32)
+    for u in range(M) :
+        for v in range(N) :
+            D = np.sqrt((u - M / 2) ** 2 + (v - N / 2) ** 2)
+            H[u , v] = (rH - rL) * (1.0 - np.exp( -c * (D ** 2 / D0 ** 2) )) + rL
+    
+    # S(u,v) = H(u,v)Z(u,v)
+    S = H * Z
+
+    # s = S的反傅立葉轉換
+    s = np.real(np.fft.ifft2(np.fft.ifftshift(S)))
+    # s = np.fft.ifft2(np.fft.ifftshift(S))
+
+    # g = exp[s(x,y)]
+    g = np.exp(s)
+    # g = np.abs(np.exp(s))
+    # g = np.clip(g , 0 , 1)
+
+    output = [f , g]
+    titles = ["before homomorphic" , "after homomorphic"]
+
+    output_image(row = 1 , col = 2 , h = 8 , w = 6 , output = output , titles = titles)
+
     return
 
 # read image
