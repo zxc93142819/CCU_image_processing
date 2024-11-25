@@ -94,7 +94,7 @@ def high_boost(f , filename) :
 
     titles = ["before high_boost" , f"A={A[0]}" , f"A={A[1]}" , f"A={A[2]}"]
 
-    output_image(row = 2 , col = 2 , h = 15 , w = 12 , output = output , titles = titles)
+    output_image(row = 1 , col = 4 , h = 15 , w = 8 , output = output , titles = titles)
 
     return
 
