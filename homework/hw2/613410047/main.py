@@ -127,6 +127,14 @@ def homomorphic(f , filename) :
     # g = exp[s(x,y)]
     g = np.exp(s)
     # g = np.abs(np.exp(s))
+
+    print(np.max(g))
+    print(np.min(g))
+
+    OldRange = np.max(g) - np.min(g)
+    NewRange = 1 - 0
+    g = (((g - np.min(g)) * NewRange) / OldRange)
+
     # g = np.clip(g , 0 , 1)
 
     output = [f , g]
