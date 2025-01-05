@@ -158,7 +158,8 @@ def canny(image):
     
     # Step 4: Double Threshold
     # strong_edges, weak_edges = double_threshold(thinned, low_ratio=0.05, high_ratio=0.15)
-    double = double_threshold(thinned, low_ratio=0.05, high_ratio=0.15)
+    double1 = double_threshold(thinned, low_ratio=0.05, high_ratio=0.15)
+    double2 = double_threshold(thinned, low_ratio=0.05, high_ratio=0.20)
 
     # cv2.imshow("strong" , double)
 
@@ -167,13 +168,14 @@ def canny(image):
     
     # Step 5: Edge Tracking by Hysteresis
     # edges = edge_tracking(strong_edges, weak_edges)
-    edges = edge_tracking(double)
+    edges1 = edge_tracking(double1)
+    edges2 = edge_tracking(double2)
 
-    output = [image , edges]
-    titles = ["before canny" , "after canny"]
+    output = [image , edges1 , edges2]
+    titles = ["before canny" , "after canny low ratio = 0.05 , high ratio = 0.15" , "after canny low ratio = 0.05 , high ratio = 0.2"]
 
     # 創建 row x col 子圖佈局
-    fig, axs = plt.subplots(1 , 2 , figsize = (10 ,  6))
+    fig, axs = plt.subplots(1 , 3 , figsize = (15 ,  6))
     for ax, img, title in zip(axs , output , titles):
         ax.imshow(img , cmap='gray')
         ax.set_title(title , fontsize = 12)
@@ -182,8 +184,8 @@ def canny(image):
     # 調整子圖間距
     plt.tight_layout()
     plt.show()
-    
-    return edges
+
+    return
 
 # read image
 dir = "./HW4_test_image/*.*"
